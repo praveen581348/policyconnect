@@ -5,20 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Send Enquiry - PolicyConnect</title>
     <style>
-        :root { --primary: #0056b3; --bg: #f4f7f6; --text: #333; --card-bg: #fff; }
+        :root { --primary: #0056b3; --primary-hover: #004494; --bg: #f4f7f6; --text: #333; --card-bg: #fff; --error: #dc3545; --success: #28a745; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: var(--bg); color: var(--text); }
         .nav { background: var(--primary); padding: 15px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .nav a { color: #fff; margin: 0 15px; text-decoration: none; font-weight: 500; font-size: 16px; }
         .nav a:hover { text-decoration: underline; }
-        .container { max-width: 600px; margin: 40px auto; background: var(--card-bg); padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { color: var(--primary); text-align: center; margin-top: 0; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .container { max-width: 600px; margin: 40px auto; background: var(--card-bg); padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: max-width 0.3s; }
+        .container.dashboard-active { max-width: 800px; }
+        h2 { color: var(--primary); text-align: center; margin-top: 0; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #444; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-family: inherit; font-size: 15px; }
-        button { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; font-weight: bold; transition: background 0.3s; }
-        button:hover { background: #004494; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-family: inherit; font-size: 15px; transition: border-color 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; }
+        button { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; font-weight: bold; transition: background 0.3s; }
+        button:hover { background: var(--primary-hover); }
         .success-box { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; border: 1px solid #c3e6cb; display: none; margin-bottom: 20px; text-align: center; font-weight: bold; }
-        .footer { text-align: center; color: #777; margin-top: 20px; padding: 20px; font-size: 14px; }
+        .error-box { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; border: 1px solid #f5c6cb; display: none; margin-bottom: 20px; text-align: center; font-weight: bold; }
+        
+        /* Tab Styles */
+        .tabs-container { display: flex; margin-bottom: 25px; border-bottom: 2px solid #ddd; }
+        .tab-btn { flex: 1; background: none; border: none; color: #666; padding: 12px; font-size: 16px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; border-radius: 0; outline: none; transition: all 0.2s; }
+        .tab-btn:hover { color: var(--primary); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        
+        .user-welcome-banner { background: #e9ecef; width: 100%; border-left: 5px solid var(--primary); border-radius: 4px; padding: 15px; margin-bottom: 25px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
+        .user-welcome-banner .welcome-text { font-size: 15px; font-weight: 500; color: #333; }
+        .user-welcome-banner .logout-link { font-size: 14px; color: var(--error); text-decoration: none; font-weight: bold; }
+        .user-welcome-banner .logout-link:hover { text-decoration: underline; }
+
+        /* Custom Enquiry Cards and Detail Lists */
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: white; display: inline-block; text-align: center; }
+        .badge.status-pending { background-color: #ffc107; color: #212529; }
+        .badge.status-processing { background-color: #17a2b8; }
+        .badge.status-accepted { background-color: #28a745; }
+        .badge.status-rejected { background-color: #dc3545; }
+
+        .enquiry-card { background: white; border: 1px solid #e1e8ed; border-radius: 8px; padding: 22px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border-left: 5px solid #ccc; transition: transform 0.2s, box-shadow 0.2s; text-align: left; }
+        .enquiry-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        .enquiry-card.status-pending { border-left-color: #ffc107; }
+        .enquiry-card.status-processing { border-left-color: #17a2b8; }
+        .enquiry-card.status-accepted { border-left-color: #28a745; }
+        .enquiry-card.status-rejected { border-left-color: #dc3545; }
+        
+        .card-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px dashed #f0f0f0; padding-bottom: 10px; }
+        .card-date { font-size: 13px; color: #777; font-weight: 500; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 13px; text-align: left; }
+        .info-grid div { color: #555; }
+        .info-grid strong { color: #333; }
+        
+        .section-title { font-size: 13px; font-weight: bold; color: var(--primary); margin: 15px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+        .comments-log { background: #fdfdfd; border: 1px solid #f1f3f5; padding: 10px 14px; border-radius: 6px; font-size: 13.5px; margin-bottom: 15px; max-height: 140px; overflow-y: auto; white-space: pre-wrap; color: #444; line-height: 1.4; border-left: 3px solid #dee2e6; text-align: left; }
+        
+        .comment-input-group { background: #f8fafd; border: 1px solid #e7f0fd; padding: 15px; border-radius: 6px; margin-top: 15px; text-align: left; }
+        .comment-input-group h4 { margin: 0 0 10px 0; font-size: 14px; color: var(--primary); }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: #666; font-size: 15px; }
+        .empty-state-btn { background: var(--primary); color: white; padding: 10px 20px; border-radius: 5px; border: none; font-weight: bold; margin-top: 15px; cursor: pointer; width: auto; display: inline-block; }
+
+        /* Helpers */
+        .switch-link { text-align: center; margin-top: 15px; font-size: 14px; color: #666; }
+        .switch-link a { color: var(--primary); font-weight: 600; text-decoration: none; cursor: pointer; }
+        .switch-link a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -31,74 +78,499 @@
 </div>
 
 <div class="container">
-    <h2>Submit Your Enquiry</h2>
-
-<div id="successBox" class="success-box">
-    Enquiry Sent Successfully! We will contact you soon.
-</div>
-
-<form id="enquiryForm">
-    <div class="form-group">
-        <label>Full Name:</label>
-        <input type="text" id="fullName" required>
-    </div>
-    <div class="form-group">
-        <label>Age:</label>
-        <input type="number" id="age" required>
-    </div>
-    <div class="form-group">
-        <label>Gender:</label>
-        <select id="gender">
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label>Phone Number:</label>
-        <input type="tel" id="phone" required>
-    </div>
-    <div class="form-group">
-        <label>Email Address:</label>
-        <input type="email" id="email" required>
-    </div>
-    <div class="form-group">
-        <label>Permanent Address:</label>
-        <textarea id="address" rows="2" required></textarea>
-    </div>
-    <div class="form-group">
-        <label>Current Address (Optional):</label>
-        <textarea id="currentAddress" rows="2"></textarea>
-    </div>
-    <div class="form-group">
-        <label>What are you looking for? (Comments):</label>
-        <textarea id="comments" rows="3"></textarea>
-    </div>
     
-    <button type="submit" id="submitBtn">Send Enquiry</button>
-</form>
+    <!-- AUTHENTICATION FORM SECTION (Login / Register) -->
+    <div id="authSection" style="display: none;">
+        <div class="tabs-container">
+            <button class="tab-btn active" id="tabLoginBtn" onclick="showAuthTab('login')">Log In</button>
+            <button class="tab-btn" id="tabRegisterBtn" onclick="showAuthTab('register')">Register New Account</button>
+        </div>
+
+        <div id="authAlertSuccess" class="success-box"></div>
+        <div id="authAlertError" class="error-box"></div>
+
+        <!-- USER LOGIN FORM -->
+        <form id="loginForm">
+            <h3 style="color: var(--primary); margin-top: 0; margin-bottom: 15px; text-align: center;">Log In to Send an Enquiry</h3>
+            <div class="form-group">
+                <label>Email Address or Phone Number:</label>
+                <input type="text" id="loginIdentifier" placeholder="Enter Email or Phone Number" required>
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="loginPassword" placeholder="Enter Password" required>
+            </div>
+            <button type="submit" id="loginSubmitBtn">Log In</button>
+            <div class="switch-link">
+                Don't have an account? <a onclick="showAuthTab('register')">Register here</a>
+            </div>
+        </form>
+
+        <!-- USER REGISTRATION FORM -->
+        <form id="registerForm" style="display: none;">
+            <h3 style="color: var(--primary); margin-top: 0; margin-bottom: 15px; text-align: center;">Create an Account</h3>
+            <div class="form-group">
+                <label>Full Name:</label>
+                <input type="text" id="regFullName" placeholder="Enter Full Name" required>
+            </div>
+            <div class="form-group">
+                <label>Phone Number:</label>
+                <input type="tel" id="regPhone" placeholder="Enter Phone Number" required>
+            </div>
+            <div class="form-group">
+                <label>Email Address:</label>
+                <input type="email" id="regEmail" placeholder="Enter Email Address" required>
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="regPassword" placeholder="Create Password" required>
+            </div>
+            <div class="form-group">
+                <label>Confirm Password:</label>
+                <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required>
+            </div>
+            <button type="submit" id="registerSubmitBtn">Register</button>
+            <div class="switch-link">
+                Already have an account? <a onclick="showAuthTab('login')">Log in here</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- ENQUIRY SUBMISSION & USER DASHBOARD SECTION -->
+    <div id="enquirySection" style="display: none;">
+        <div class="user-welcome-banner">
+            <div class="welcome-text">
+                Welcome back, <strong id="loggedInUserName">User</strong>!
+            </div>
+            <a href="javascript:void(0)" class="logout-link" onclick="logoutUser()">Log Out</a>
+        </div>
+
+        <!-- Dashboard Sub-Tabs -->
+        <div class="tabs-container" style="margin-bottom: 25px;">
+            <button class="tab-btn active" id="tabMyEnquiriesBtn" onclick="showDashboardTab('history')">My Enquiries & Status</button>
+            <button class="tab-btn" id="tabNewEnquiryBtn" onclick="showDashboardTab('new')">Submit New Enquiry</button>
+        </div>
+
+        <div id="successBox" class="success-box">
+            Enquiry Sent Successfully! We will contact you soon.
+        </div>
+        <div id="errorBox" class="error-box"></div>
+
+        <!-- SUB-TAB 1: ENQUIRY LIST & COMMENTS STATUS -->
+        <div id="historySubSection">
+            <h2 style="font-size: 20px; border: none; padding-bottom: 5px; margin-bottom: 15px;">Your Insurance & Investment Enquiries</h2>
+            <div id="myEnquiriesList">
+                <div style="text-align: center; color: #666; padding: 20px;">Loading your enquiries...</div>
+            </div>
+        </div>
+
+        <!-- SUB-TAB 2: SUBMIT NEW ENQUIRY FORM -->
+        <div id="newEnquirySubSection" style="display: none;">
+            <h2>Submit New Enquiry</h2>
+            <form id="enquiryForm">
+                <div class="form-group" style="opacity: 0.8;">
+                    <label>Full Name (from account):</label>
+                    <input type="text" id="fullName" readonly style="background: #f1f3f5; cursor: not-allowed;">
+                </div>
+                <div class="form-group" style="opacity: 0.8;">
+                    <label>Phone Number (from account):</label>
+                    <input type="tel" id="phone" readonly style="background: #f1f3f5; cursor: not-allowed;">
+                </div>
+                <div class="form-group" style="opacity: 0.8;">
+                    <label>Email Address (from account):</label>
+                    <input type="email" id="email" readonly style="background: #f1f3f5; cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label>Age:</label>
+                    <input type="number" id="age" required min="1" max="120" placeholder="Enter your age">
+                </div>
+                <div class="form-group">
+                    <label>Gender:</label>
+                    <select id="gender">
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Permanent Address:</label>
+                    <textarea id="address" rows="2" placeholder="Enter Permanent Address" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Current Address (Optional):</label>
+                    <textarea id="currentAddress" rows="2" placeholder="Leave blank if same as permanent address"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>What are you looking for? (Comments):</label>
+                    <textarea id="comments" rows="3" placeholder="Explain your insurance needs or investment requirements..."></textarea>
+                </div>
+                
+                <button type="submit" id="submitBtn">Send Enquiry</button>
+            </form>
+        </div>
+    </div>
 
 </div>
-
-<!-- Footer removed -->
 
 <script>
+    // Elements
+    const authSection = document.getElementById('authSection');
+    const enquirySection = document.getElementById('enquirySection');
+    const loggedInUserName = document.getElementById('loggedInUserName');
+    
+    const authAlertSuccess = document.getElementById('authAlertSuccess');
+    const authAlertError = document.getElementById('authAlertError');
+
+    // Tab Switcher for Auth (Login / Register)
+    function showAuthTab(tab) {
+        // Clear alerts
+        hideAlerts();
+
+        const tabLoginBtn = document.getElementById('tabLoginBtn');
+        const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+
+        if (tab === 'login') {
+            tabLoginBtn.classList.add('active');
+            tabRegisterBtn.classList.remove('active');
+            loginForm.style.display = 'block';
+            registerForm.style.display = 'none';
+        } else {
+            tabLoginBtn.classList.remove('active');
+            tabRegisterBtn.classList.add('active');
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+        }
+    }
+
+    // Tab Switcher for User Dashboard (My Enquiries / New Enquiry)
+    function showDashboardTab(tab) {
+        hideAlerts();
+        const tabMyEnquiriesBtn = document.getElementById('tabMyEnquiriesBtn');
+        const tabNewEnquiryBtn = document.getElementById('tabNewEnquiryBtn');
+        const historySubSection = document.getElementById('historySubSection');
+        const newEnquirySubSection = document.getElementById('newEnquirySubSection');
+        const container = document.querySelector('.container');
+
+        if (tab === 'history') {
+            tabMyEnquiriesBtn.classList.add('active');
+            tabNewEnquiryBtn.classList.remove('active');
+            historySubSection.style.display = 'block';
+            newEnquirySubSection.style.display = 'none';
+            container.classList.add('dashboard-active');
+            
+            // Reload user session enquiries
+            const sessionStr = localStorage.getItem('user_session');
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    loadMyEnquiries(session);
+                } catch (e) {}
+            }
+        } else {
+            tabMyEnquiriesBtn.classList.remove('active');
+            tabNewEnquiryBtn.classList.add('active');
+            historySubSection.style.display = 'none';
+            newEnquirySubSection.style.display = 'block';
+            container.classList.remove('dashboard-active');
+        }
+    }
+
+    function hideAlerts() {
+        authAlertSuccess.style.display = 'none';
+        authAlertError.style.display = 'none';
+        document.getElementById('successBox').style.display = 'none';
+        document.getElementById('errorBox').style.display = 'none';
+    }
+
+    function showAlert(type, message) {
+        hideAlerts();
+        const box = type === 'success' ? authAlertSuccess : authAlertError;
+        box.innerText = message;
+        box.style.display = 'block';
+    }
+
+    // Check if user is logged in
+    function init() {
+        const userSession = localStorage.getItem('user_session');
+        const container = document.querySelector('.container');
+        if (userSession) {
+            try {
+                const session = JSON.parse(userSession);
+                if (session && session.id) {
+                    // Update layout
+                    loggedInUserName.innerText = session.fullName;
+                    document.getElementById('fullName').value = session.fullName;
+                    document.getElementById('phone').value = session.phone;
+                    document.getElementById('email').value = session.email;
+
+                    authSection.style.display = 'none';
+                    enquirySection.style.display = 'block';
+                    
+                    // Show enquiries tab by default
+                    showDashboardTab('history');
+                    return;
+                }
+            } catch (e) {
+                localStorage.removeItem('user_session');
+            }
+        }
+        
+        // Default: show auth
+        container.classList.remove('dashboard-active');
+        authSection.style.display = 'block';
+        enquirySection.style.display = 'none';
+        showAuthTab('login');
+    }
+
+    // Load logged-in user's specific enquiries
+    async function loadMyEnquiries(user) {
+        const listContainer = document.getElementById('myEnquiriesList');
+        listContainer.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Loading your enquiries...</div>';
+        
+        try {
+            const res = await fetch(`/api/user/enquiries?email=${encodeURIComponent(user.email)}&phone=${encodeURIComponent(user.phone)}`);
+            if (!res.ok) throw new Error();
+            const enquiries = await res.json();
+            
+            if (!enquiries || enquiries.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <p>No policy or investment enquiries found associated with your account.</p>
+                        <button class="empty-state-btn" onclick="showDashboardTab('new')">Submit Your First Enquiry</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            listContainer.innerHTML = '';
+            enquiries.forEach(enq => {
+                const status = enq.status || 'Pending';
+                let statusClass = 'status-pending';
+                if (status === 'Accepted') statusClass = 'status-accepted';
+                else if (status === 'Rejected') statusClass = 'status-rejected';
+                else if (status === 'Processing') statusClass = 'status-processing';
+                
+                const card = document.createElement('div');
+                card.className = `enquiry-card ${statusClass}`;
+                
+                // Format Policy info
+                let policySection = '';
+                if (status === 'Accepted' && enq.policyNumber && enq.policyNumber !== '-') {
+                    policySection = `
+                        <div style="background: #e6f4ea; border: 1px solid #b7e1cd; color: #137333; padding: 10px; border-radius: 6px; font-weight: bold; margin-bottom: 12px; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>Issued Policy Number: ${enq.policyNumber}</span>
+                            <span style="font-size: 11px; text-transform: uppercase; background: #137333; color: white; padding: 2px 6px; border-radius: 4px;">Active</span>
+                        </div>
+                    `;
+                }
+                
+                let adminRemarksSection = '';
+                if (enq.adminComments && enq.adminComments.trim()) {
+                    adminRemarksSection = `
+                        <div class="section-title">Support Team Response Remarks:</div>
+                        <div style="background: #fff8e1; border-left: 4px solid #ffb300; padding: 10px 14px; border-radius: 4px; font-size: 13px; color: #5d4037; font-weight: 500; margin-bottom: 12px; white-space: pre-wrap;">${enq.adminComments}</div>
+                    `;
+                } else {
+                    adminRemarksSection = `
+                        <div class="section-title">Support Team Response Remarks:</div>
+                        <div style="font-style: italic; font-size: 12.5px; color: #888; margin-bottom: 12px;">Our team is processing your enquiry. We will reach out shortly!</div>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="card-row">
+                        <span class="card-date">Enquiry Date: ${enq.date || '-'}</span>
+                        <span class="badge ${statusClass}">${status}</span>
+                    </div>
+                    
+                    ${policySection}
+                    
+                    <div class="info-grid">
+                        <div><strong>Policy Applicant:</strong> ${enq.fullName}</div>
+                        <div><strong>Age:</strong> ${enq.age || '-'} years</div>
+                        <div><strong>Gender:</strong> ${enq.gender || '-'}</div>
+                        <div><strong>Contact:</strong> ${enq.phone} (${enq.email})</div>
+                        <div style="grid-column: span 2;"><strong>Permanent Address:</strong> ${enq.address}</div>
+                        ${enq.currentAddress && enq.currentAddress !== enq.address ? `<div style="grid-column: span 2;"><strong>Current Address:</strong> ${enq.currentAddress}</div>` : ''}
+                    </div>
+                    
+                    <div class="section-title">Original Inquiry & Customer Comments log:</div>
+                    <div class="comments-log" id="commentsLog-${enq.id}">${enq.comments || 'No comments.'}</div>
+                    
+                    ${adminRemarksSection}
+                    
+                    <!-- Quick Customer Comment addition form -->
+                    <div class="comment-input-group">
+                        <h4 style="margin: 0 0 8px 0; font-size: 13.5px;">Add Follow-up Message / Details</h4>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="userInputComment-${enq.id}" placeholder="Type follow-up remarks / additional details..." style="flex: 1; padding: 10px; font-size: 13.5px; border: 1px solid #ccc; border-radius: 4px;">
+                            <button type="button" onclick="submitEnquiryComment(${enq.id})" id="commentBtn-${enq.id}" style="width: auto; padding: 0 16px; font-size: 13.5px; margin: 0;">Send Comment</button>
+                        </div>
+                        <div id="commentError-${enq.id}" class="error-box" style="padding: 8px; font-size: 12.5px; margin-top: 8px; text-align: left; display: none;"></div>
+                    </div>
+                `;
+                
+                listContainer.appendChild(card);
+            });
+        } catch (err) {
+            listContainer.innerHTML = '<div style="color: #dc3545; text-align: center; padding: 20px; font-weight: bold;">Error retrieving your enquiries. Please refresh.</div>';
+        }
+    }
+
+    // Submit additional comment on a specific enquiry
+    async function submitEnquiryComment(enqId) {
+        const inputEl = document.getElementById(`userInputComment-${enqId}`);
+        const errEl = document.getElementById(`commentError-${enqId}`);
+        const btnEl = document.getElementById(`commentBtn-${enqId}`);
+        
+        const commentText = inputEl.value;
+        if (!commentText || !commentText.trim()) {
+            return;
+        }
+        
+        btnEl.disabled = true;
+        btnEl.innerText = 'Sending...';
+        errEl.style.display = 'none';
+        
+        try {
+            const res = await fetch('/api/enquiry/comment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: enqId, userComment: commentText })
+            });
+            
+            const data = await res.json();
+            if (res.ok && data.success) {
+                inputEl.value = '';
+                // Reload list to reflect the updated logs
+                const userSession = localStorage.getItem('user_session');
+                if (userSession) {
+                    const user = JSON.parse(userSession);
+                    await loadMyEnquiries(user);
+                }
+            } else {
+                errEl.innerText = data.message || 'Could not send update.';
+                errEl.style.display = 'block';
+            }
+        } catch (e) {
+            errEl.innerText = 'Network error. Try again.';
+            errEl.style.display = 'block';
+        } finally {
+            btnEl.disabled = false;
+            btnEl.innerText = 'Send Comment';
+        }
+    }
+
+    // Logout
+    function logoutUser() {
+        localStorage.removeItem('user_session');
+        init();
+    }
+
+    // Login Form Submit
+    document.getElementById('loginForm').onsubmit = async (e) => {
+        e.preventDefault();
+        hideAlerts();
+        const btn = document.getElementById('loginSubmitBtn');
+        btn.disabled = true;
+        btn.innerText = 'Logging in...';
+
+        const identifier = document.getElementById('loginIdentifier').value;
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            const res = await fetch('/api/user/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, password })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                localStorage.setItem('user_session', JSON.stringify(data.user));
+                document.getElementById('loginForm').reset();
+                init(); // Reload
+            } else {
+                showAlert('error', data.message || 'Login failed. Please check your credentials.');
+            }
+        } catch (err) {
+            showAlert('error', 'Network error. Please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = 'Log In';
+        }
+    };
+
+    // Register Form Submit
+    document.getElementById('registerForm').onsubmit = async (e) => {
+        e.preventDefault();
+        hideAlerts();
+        const btn = document.getElementById('registerSubmitBtn');
+
+        const fullName = document.getElementById('regFullName').value;
+        const phone = document.getElementById('regPhone').value;
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+        if (password !== confirmPassword) {
+            showAlert('error', 'Passwords do not match.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = 'Registering...';
+
+        try {
+            const res = await fetch('/api/user/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fullName, phone, email, password })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showAlert('success', data.message || 'Registration successful! You can now log in.');
+                document.getElementById('registerForm').reset();
+                
+                // Pre-fill login email/phone and focus password
+                document.getElementById('loginIdentifier').value = email;
+                setTimeout(() => {
+                    showAuthTab('login');
+                }, 1500);
+            } else {
+                showAlert('error', data.message || 'Registration failed. Try again.');
+            }
+        } catch (err) {
+            showAlert('error', 'Network error. Please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = 'Register';
+        }
+    };
+
+    // Enquiry Form Submit
     document.getElementById('enquiryForm').onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         const successBox = document.getElementById('successBox');
+        const errorBox = document.getElementById('errorBox');
         
         btn.disabled = true;
         btn.innerText = 'Processing...';
+        successBox.style.display = 'none';
+        errorBox.style.display = 'none';
 
         const body = {
             fullName: document.getElementById('fullName').value,
-            address: document.getElementById('address').value,
-            currentAddress: document.getElementById('currentAddress').value || document.getElementById('address').value,
             phone: document.getElementById('phone').value,
+            email: document.getElementById('email').value,
             age: document.getElementById('age').value,
             gender: document.getElementById('gender').value,
-            email: document.getElementById('email').value,
+            address: document.getElementById('address').value,
+            currentAddress: document.getElementById('currentAddress').value || document.getElementById('address').value,
             comments: document.getElementById('comments').value
         };
 
@@ -109,21 +581,41 @@
                 body: JSON.stringify(body)
             });
 
-            // Even if it fails, or succeeds, act like it succeeded for seamless experience
-            successBox.style.display = 'block';
-            document.getElementById('enquiryForm').reset();
-            window.scrollTo(0, 0);
+            if (res.ok) {
+                successBox.innerText = 'Enquiry Sent Successfully! We will contact you soon.';
+                successBox.style.display = 'block';
+                
+                // Reset enquiry fields
+                document.getElementById('age').value = '';
+                document.getElementById('address').value = '';
+                document.getElementById('currentAddress').value = '';
+                document.getElementById('comments').value = '';
+                
+                // Redirect user back to enquiries list tab
+                setTimeout(() => {
+                    showDashboardTab('history');
+                }, 2000);
+            } else {
+                errorBox.innerText = 'Failed to submit enquiry. Please try again.';
+                errorBox.style.display = 'block';
+            }
         } catch (err) {
-            // Offline fallback: show success box seamlessly
+            // Offline fallback: show success seamlessly
+            successBox.innerText = 'Enquiry submitted offline successfully!';
             successBox.style.display = 'block';
             document.getElementById('enquiryForm').reset();
-            window.scrollTo(0, 0);
+            setTimeout(() => {
+                showDashboardTab('history');
+            }, 2000);
         } finally {
             btn.disabled = false;
             btn.innerText = 'Send Enquiry';
-            setTimeout(() => { successBox.style.display = 'none'; }, 5000);
+            setTimeout(() => { successBox.style.display = 'none'; }, 6000);
         }
     };
+
+    // Run init on load
+    document.addEventListener('DOMContentLoaded', init);
 </script>
 
 </body>

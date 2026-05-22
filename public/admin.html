@@ -17,14 +17,45 @@
         input, select, textarea { padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; width: 100%; font-family: inherit; }
         button { background: var(--primary); color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: background 0.3s; }
         button:hover { background: #004494; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
-        .modal-content { background-color: #fff; margin: 5% auto; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); overflow-y: auto; }
+        .modal-content { background-color: #fff; margin: 3% auto; padding: 30px; border-radius: 8px; width: 92%; max-width: 700px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: left; }
         .status-msg { color: #dc3545; font-weight: bold; margin-top: 10px; }
         #loginSection, #dashSection { background: var(--card-bg); padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         #loginSection { max-width: 350px; margin: 80px auto; text-align: center; }
         .btn-group button { margin-right: 10px; margin-bottom: 10px; background: #6c757d; }
         .btn-group button.primary { background: var(--primary); }
         .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; color: white; display: inline-block; text-align: center; }
+        
+        /* Advanced admin panel styles */
+        tr { cursor: pointer; transition: background-color 0.2s; }
+        tr:hover { background-color: #f1f5f9; }
+
+        .admin-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; text-align: left; }
+        .admin-details-grid div { line-height: 1.5; color: #444; }
+        .admin-details-grid strong { color: #111; font-weight: 600; display: inline-block; margin-bottom: 2px; }
+        
+        .modal-comments-log { background: #fcfdfe; border: 1px solid #e1e8ed; padding: 12px; border-radius: 6px; font-size: 13.5px; margin-bottom: 20px; max-height: 150px; overflow-y: auto; white-space: pre-wrap; color: #333; line-height: 1.4; border-left: 4px solid var(--primary); text-align: left; }
+        
+        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .modal-actions button { flex: 1; }
+
+        /* Toast Notification Styling */
+        #toast {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -53,7 +84,7 @@
         <button onclick="window.location.href='index.html'" class="primary">Back to Homepage</button>
         <button onclick="exportToCSV()">Export CSV</button>
         <button onclick="loadEnquiries()">Refresh List</button>
-        <button onclick="location.reload()" style="background: #dc3545;">Logout</button>
+        <button onclick="logout()" style="background: #dc3545;">Logout</button>
     </div>
     
     <input type="text" id="searchInput" placeholder="Search by name, phone, or status..." onkeyup="filterTable()" style="margin-top: 10px;">
@@ -77,33 +108,187 @@
 <!-- Update Data Modal -->
 <div id="editModal" class="modal">
     <div class="modal-content">
-        <h3>Process Enquiry</h3>
-        <p><strong>Name:</strong> <span id="clientName"></span></p>
-        <p><strong>Message:</strong> <span id="clientMsg"></span></p>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 12px; margin-bottom: 18px;">
+            <h3 style="margin: 0; color: var(--primary); font-size: 19px;">Enquiry Details & Update Process</h3>
+            <span style="font-size: 12px; color: #666; font-weight: 500;">Enquiry ID: <span id="enquiryId" style="font-weight: bold; color: var(--primary);"></span> &bull; Date: <span id="enquiryDate" style="font-weight: bold;"></span></span>
+        </div>
         
-        <label>Status:</label><br>
-        <select id="updateStatus">
-            <option>Pending</option>
-            <option>Processing</option>
-            <option>Accepted</option>
-            <option>Rejected</option>
-        </select><br>
+        <div class="admin-details-grid">
+            <div><strong>Applicant Full Name:</strong><br><span id="clientName"></span></div>
+            <div><strong>Demographics:</strong><br>Age: <span id="clientAge"></span> yrs &bull; Gender: <span id="clientGender"></span></div>
+            <div><strong>Email Address:</strong><br><span id="clientEmail"></span></div>
+            <div><strong>Phone Number:</strong><br><span id="clientPhone"></span></div>
+            <div style="grid-column: span 2;"><strong>Permanent Address:</strong><br><span id="clientAddress"></span></div>
+            <div style="grid-column: span 2;" id="currentAddressGroup"><strong>Current Address (Optional):</strong><br><span id="clientCurrentAddress"></span></div>
+        </div>
 
-        <label>Policy Number:</label><br>
-        <input type="text" id="updatePolicy" style="width: 100%;"><br>
+        <h4 style="margin: 0 0 6px 0; font-size: 13.5px; color: var(--primary);">Customer Comments & Inquiry Log:</h4>
+        <div class="modal-comments-log" id="clientMsg"></div>
+        
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+        
+        <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Admin Response Panel</h4>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
+            <div>
+                <label style="font-weight: 600; font-size: 13px; color: #444; display: block; margin-bottom: 4px;">Application Status:</label>
+                <select id="updateStatus">
+                    <option>Pending</option>
+                    <option>Processing</option>
+                    <option>Accepted</option>
+                    <option>Rejected</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-weight: 600; font-size: 13px; color: #444; display: block; margin-bottom: 4px;">Issued Policy Number (If Approved):</label>
+                <input type="text" id="updatePolicy" placeholder="e.g. POL-12345 (optional)">
+            </div>
+        </div>
 
-        <label>Remarks:</label><br>
-        <textarea id="updateRemarks" rows="3" style="width: 100%;"></textarea><br>
+        <div style="margin-bottom: 18px;">
+            <label style="font-weight: 600; font-size: 13px; color: #444; display: block; margin-bottom: 4px;">Support Comments / Response Remarks:</label>
+            <textarea id="updateRemarks" rows="3" placeholder="Add comments here. These will be visible to the user..."></textarea>
+        </div>
 
-        <button onclick="updateEnquiry()">Save Changes</button>
-        <button onclick="closeModal()" style="background: #6c757d;">Cancel</button>
+        <div class="modal-actions">
+            <button onclick="updateEnquiry()" class="primary">Save Changes</button>
+            <button onclick="closeModal()" style="background: #6c757d;">Cancel</button>
+        </div>
     </div>
 </div>
 </div>
 
+<!-- Toast Container -->
+<div id="toast"></div>
+
 <script>
     let enquiriesData = [];
     let currentId = null;
+
+    // Premium custom Toast notification function
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.innerText = message;
+        toast.style.display = 'block';
+        
+        // Force reflow
+        toast.offsetHeight;
+        
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+        
+        let bg = '#333';
+        if (type === 'success') bg = '#28a745';
+        else if (type === 'error') bg = '#dc3545';
+        else if (type === 'warning') bg = '#ffc107';
+        else if (type === 'info') bg = '#0056b3';
+        toast.style.background = bg;
+        
+        if (window.toastTimeout) clearTimeout(window.toastTimeout);
+        
+        window.toastTimeout = setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 300);
+        }, 4000);
+    }
+
+    // Check session status on load immediately
+    document.addEventListener('DOMContentLoaded', () => {
+        initSession();
+    });
+
+    function initSession() {
+        const sessionStr = localStorage.getItem('admin_session');
+        if (sessionStr) {
+            try {
+                const session = JSON.parse(sessionStr);
+                if (session && session.loggedIn) {
+                    const now = Date.now();
+                    const tenMinutes = 10 * 60 * 1000;
+                    if (now - session.lastActivity > tenMinutes) {
+                        // Expired silently on tab load
+                        localStorage.removeItem('admin_session');
+                        showLoginSection();
+                    } else {
+                        // Valid - keep logged in
+                        session.lastActivity = now;
+                        localStorage.setItem('admin_session', JSON.stringify(session));
+                        showDashSection();
+                        loadEnquiries();
+                    }
+                } else {
+                    showLoginSection();
+                }
+            } catch (e) {
+                localStorage.removeItem('admin_session');
+                showLoginSection();
+            }
+        } else {
+            showLoginSection();
+        }
+    }
+
+    function showLoginSection() {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('dashSection').style.display = 'none';
+    }
+
+    function showDashSection() {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('dashSection').style.display = 'block';
+    }
+
+    // Update session timestamp on actual interaction with some rate limiting
+    let lastUpdateCall = 0;
+    function updateActivityTime() {
+        const now = Date.now();
+        // Throttle updates to at most once every 3 seconds
+        if (now - lastUpdateCall < 3000) return;
+        lastUpdateCall = now;
+
+        const sessionStr = localStorage.getItem('admin_session');
+        if (sessionStr) {
+            try {
+                const session = JSON.parse(sessionStr);
+                if (session && session.loggedIn) {
+                    const checkNow = Date.now();
+                    if (checkNow - session.lastActivity > 10 * 60 * 1000) {
+                        showToast('Session expired after 10 minutes of inactivity.', 'error');
+                        setTimeout(logout, 1500);
+                    } else {
+                        session.lastActivity = checkNow;
+                        localStorage.setItem('admin_session', JSON.stringify(session));
+                    }
+                }
+            } catch (e) {}
+        }
+    }
+
+    // Monitor various user input events to track active engagement
+    ['click', 'keydown', 'scroll', 'mousedown'].forEach(evt => {
+        document.addEventListener(evt, updateActivityTime, { passive: true });
+    });
+
+    // Run active background validation check every 15 seconds
+    setInterval(() => {
+        const sessionStr = localStorage.getItem('admin_session');
+        if (sessionStr) {
+            try {
+                const session = JSON.parse(sessionStr);
+                if (session && session.loggedIn) {
+                    const now = Date.now();
+                    if (now - session.lastActivity > 10 * 60 * 1000) {
+                        showToast('Your session has expired due to 10 minutes of inactivity. Please log in again.', 'error');
+                        setTimeout(logout, 1500);
+                    }
+                }
+            } catch (e) {}
+        }
+    }, 15000);
 
     async function login() {
         const user = document.getElementById('user').value;
@@ -120,15 +305,30 @@
             });
 
             if (res.ok) {
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('dashSection').style.display = 'block';
+                // Initialize admin session state
+                const now = Date.now();
+                localStorage.setItem('admin_session', JSON.stringify({
+                    loggedIn: true,
+                    lastActivity: now
+                }));
+
+                status.innerText = '';
+                showToast('Welcome, Administrator!', 'success');
+                showDashSection();
                 loadEnquiries();
             } else {
-                status.innerText = 'Invalid credentials. Try admin / admin123';
+                status.innerText = 'Invalid username or password.';
+                showToast('Invalid credentials.', 'error');
             }
         } catch (e) {
             status.innerText = 'Network error during login.';
+            showToast('Network error during login.', 'error');
         }
+    }
+
+    function logout() {
+        localStorage.removeItem('admin_session');
+        location.reload();
     }
 
     async function loadEnquiries() {
@@ -137,7 +337,7 @@
             enquiriesData = await res.json();
             renderTable();
         } catch (err) {
-            alert('Failed to load data. Please refresh.');
+            showToast('Failed to load data. Please refresh.', 'error');
         }
     }
 
@@ -145,27 +345,41 @@
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         
+        // Ensure enquiriesData is an array to prevent crashes
+        if (!enquiriesData || !Array.isArray(enquiriesData)) {
+            enquiriesData = [];
+        }
+        
         const filteredData = [...enquiriesData].reverse().filter(enq => {
+            if (!enq) return false;
             if (!filterText) return true;
-            const searchStr = (enq.fullName + enq.phone + enq.status + (enq.policyNumber || '') + (enq.adminComments || '')).toLowerCase();
+            const fullName = enq.fullName || '';
+            const phone = enq.phone || '';
+            const status = enq.status || '';
+            const policy = enq.policyNumber || '';
+            const comments = enq.adminComments || '';
+            const searchStr = (fullName + phone + status + policy + comments).toLowerCase();
             return searchStr.includes(filterText.toLowerCase());
         });
 
         filteredData.forEach(enq => {
+            if (!enq) return;
             let badgeColor = '#ffc107'; // pending
-            if (enq.status === 'Accepted') badgeColor = '#28a745';
-            else if (enq.status === 'Rejected') badgeColor = '#dc3545';
-            else if (enq.status === 'Processing') badgeColor = '#17a2b8';
+            const status = enq.status || 'Pending';
+            if (status === 'Accepted') badgeColor = '#28a745';
+            else if (status === 'Rejected') badgeColor = '#dc3545';
+            else if (status === 'Processing') badgeColor = '#17a2b8';
 
             const tr = document.createElement('tr');
+            tr.setAttribute('onclick', `editById(${enq.id})`);
             tr.innerHTML = `
-                <td>${enq.date}</td>
-                <td>${enq.fullName}</td>
-                <td>${enq.phone}</td>
-                <td><span class="badge" style="background: ${badgeColor};">${enq.status}</span></td>
+                <td>${enq.date || '-'}</td>
+                <td>${enq.fullName || '-'}</td>
+                <td>${enq.phone || '-'}</td>
+                <td><span class="badge" style="background: ${badgeColor};">${status}</span></td>
                 <td>${enq.policyNumber || '-'}</td>
                 <td>${enq.adminComments || '-'}</td>
-                <td><button onclick="editById(${enq.id})" style="background: #17a2b8;">Update</button></td>
+                <td><button onclick="event.stopPropagation(); editById(${enq.id})" style="background: #17a2b8; padding: 6px 12px; font-size: 13px;">Process</button></td>
             `;
             tbody.appendChild(tr);
         });
@@ -180,11 +394,29 @@
         const enq = enquiriesData.find(e => e.id === id);
         if (enq) {
             currentId = enq.id;
-            document.getElementById('clientName').innerText = enq.fullName;
-            document.getElementById('clientMsg').innerText = enq.comments || 'No comments';
-            document.getElementById('updateStatus').value = enq.status;
+            document.getElementById('enquiryId').innerText = enq.id;
+            document.getElementById('enquiryDate').innerText = enq.date || '-';
+            
+            document.getElementById('clientName').innerText = enq.fullName || '-';
+            document.getElementById('clientAge').innerText = enq.age || '-';
+            document.getElementById('clientGender').innerText = enq.gender || '-';
+            document.getElementById('clientEmail').innerText = enq.email || '-';
+            document.getElementById('clientPhone').innerText = enq.phone || '-';
+            document.getElementById('clientAddress').innerText = enq.address || '-';
+            
+            const currentAddr = enq.currentAddress ? enq.currentAddress.trim() : '';
+            if (currentAddr && currentAddr !== enq.address) {
+                document.getElementById('clientCurrentAddress').innerText = currentAddr;
+                document.getElementById('currentAddressGroup').style.display = 'block';
+            } else {
+                document.getElementById('currentAddressGroup').style.display = 'none';
+            }
+            
+            document.getElementById('clientMsg').innerText = enq.comments || 'No comment details provided.';
+            document.getElementById('updateStatus').value = enq.status || 'Pending';
             document.getElementById('updatePolicy').value = enq.policyNumber || '';
             document.getElementById('updateRemarks').value = enq.adminComments || '';
+            
             document.getElementById('editModal').style.display = 'block';
         }
     }
@@ -202,15 +434,20 @@
         };
 
         try {
-            await fetch('/api/update', {
+            const res = await fetch('/api/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
+            if (res.ok) {
+                showToast('Enquiry updated successfully.', 'success');
+            } else {
+                showToast('Failed to update enquiry.', 'error');
+            }
             closeModal();
             loadEnquiries(); // Reload table
         } catch (err) {
-            alert('Failed to update enquiry.');
+            showToast('Failed to update enquiry due to a network error.', 'error');
         }
     }
 
